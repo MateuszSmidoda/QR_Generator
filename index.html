@@ -1,0 +1,585 @@
+<!doctype html>
+<html lang="pl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>QR Link — generator kodów QR</title>
+
+  <!-- QRCode generator -->
+  <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+
+  <style>
+    :root{
+      --bg:#0b0f17;
+      --card:#101827;
+      --muted:#9aa7bd;
+      --text:#e8eefc;
+      --line:#22314b;
+      --accent:#6ee7ff;
+      --accent2:#a78bfa;
+      --danger:#ff5c77;
+      --shadow: 0 10px 30px rgba(0,0,0,.35);
+      --radius: 16px;
+    }
+    [data-theme="light"]{
+      --bg:#f6f7fb;
+      --card:#ffffff;
+      --muted:#56657a;
+      --text:#0b1220;
+      --line:#e6e9f2;
+      --accent:#0ea5e9;
+      --accent2:#7c3aed;
+      --shadow: 0 10px 25px rgba(17,24,39,.08);
+    }
+
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial;
+      background: radial-gradient(1200px 700px at 10% 10%, rgba(110,231,255,.10), transparent 60%),
+                  radial-gradient(900px 600px at 90% 20%, rgba(167,139,250,.12), transparent 60%),
+                  var(--bg);
+      color:var(--text);
+      min-height:100vh;
+      display:flex;
+      justify-content:center;
+      padding: 28px;
+    }
+    .wrap{
+      width: min(1100px, 100%);
+      display:grid;
+      grid-template-columns: 1.15fr .85fr;
+      gap: 18px;
+    }
+    @media (max-width: 980px){
+      .wrap{grid-template-columns:1fr;}
+    }
+
+    header{
+      grid-column: 1 / -1;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      margin-bottom: 4px;
+    }
+    .brand{display:flex; align-items:center; gap:12px;}
+    .logo{
+      width:42px;height:42px;border-radius: 14px;
+      background: linear-gradient(135deg, rgba(110,231,255,.9), rgba(167,139,250,.9));
+      box-shadow: var(--shadow);
+    }
+    h1{font-size: 18px; margin:0; letter-spacing:.2px;}
+    .sub{margin:0; font-size: 13px; color: var(--muted)}
+    .top-actions{display:flex; gap:10px; align-items:center; flex-wrap:wrap;}
+    .btn{
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,.02);
+      color: var(--text);
+      padding: 10px 12px;
+      border-radius: 12px;
+      cursor:pointer;
+      transition: .15s ease;
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      user-select:none;
+    }
+    .btn:hover{ transform: translateY(-1px); box-shadow: var(--shadow); }
+    .btn.primary{
+      border-color: transparent;
+      background: linear-gradient(135deg, rgba(110,231,255,.9), rgba(167,139,250,.9));
+      color:#081018;
+      font-weight: 700;
+    }
+    .btn.danger{ border-color: rgba(255,92,119,.35); color: #ffd1d9; }
+    .btn.ghost{ background: transparent; }
+    .pill{
+      font-size:12px; color: var(--muted);
+      border:1px solid var(--line);
+      padding: 6px 10px;
+      border-radius: 999px;
+      white-space:nowrap;
+    }
+    .credit{
+      font-size:12px;
+      color: var(--muted);
+      border:1px solid var(--line);
+      padding: 6px 10px;
+      border-radius: 999px;
+      background: rgba(255,255,255,.02);
+    }
+
+    .card{
+      background: rgba(255,255,255,.03);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow:hidden;
+    }
+    [data-theme="light"] .card { background: rgba(255,255,255,.85); }
+
+    .card-h{
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--line);
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+    }
+    .card-b{ padding: 16px; }
+
+    label{
+      display:block;
+      font-size: 12px;
+      color: var(--muted);
+      margin-bottom: 6px;
+    }
+    input, textarea, select{
+      width:100%;
+      padding: 10px 11px;
+      border-radius: 12px;
+      border:1px solid var(--line);
+      background: rgba(0,0,0,.12);
+      color: var(--text);
+      outline:none;
+      transition:.12s ease;
+    }
+    [data-theme="light"] input,
+    [data-theme="light"] textarea,
+    [data-theme="light"] select{
+      background: rgba(17,24,39,.03);
+    }
+    textarea{ min-height: 110px; resize: vertical; }
+
+    .row{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      align-items:center;
+      justify-content:space-between;
+      margin-top: 12px;
+    }
+
+    .preview{
+      display:flex;
+      flex-direction:column;
+      gap: 12px;
+    }
+    .qrbox{
+      display:grid;
+      place-items:center;
+      padding: 18px;
+      background: rgba(255,255,255,.03);
+      border:1px dashed rgba(154,167,189,.25);
+      border-radius: 16px;
+      min-height: 260px;
+    }
+    .qrmeta{
+      font-size:12px;
+      color: var(--muted);
+      word-break: break-word;
+      line-height: 1.4;
+    }
+
+    .history{
+      display:flex; flex-direction:column; gap:10px;
+      max-height: 300px; overflow:auto;
+      padding-right: 4px;
+    }
+    .hist-item{
+      border:1px solid var(--line);
+      border-radius: 14px;
+      padding: 10px 12px;
+      cursor:pointer;
+      transition:.12s ease;
+      background: rgba(255,255,255,.02);
+    }
+    .hist-item:hover{ transform: translateY(-1px); box-shadow: var(--shadow); }
+    .hist-top{display:flex; justify-content:space-between; gap:10px; align-items:center;}
+    .hist-time{ font-size:12px; color: var(--muted); }
+    .hist-title{ font-weight:700; font-size: 13px; }
+    .hist-val{ margin-top: 6px; font-size: 12px; opacity:.9; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+
+    .hint{
+      font-size: 12px;
+      color: var(--muted);
+      margin-top: 10px;
+    }
+
+    .toast{
+      position: fixed;
+      bottom: 18px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0,0,0,.65);
+      color: #fff;
+      padding: 10px 12px;
+      border-radius: 12px;
+      border: 1px solid rgba(255,255,255,.15);
+      opacity:0;
+      pointer-events:none;
+      transition: .18s ease;
+    }
+    [data-theme="light"] .toast{ background: rgba(11,18,32,.88); }
+    .toast.show{ opacity:1; transform: translateX(-50%) translateY(-2px); }
+    .mono{font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;}
+    .footer-note{
+      margin-top: 12px;
+      padding-top: 12px;
+      border-top: 1px solid var(--line);
+      font-size: 12px;
+      color: var(--muted);
+    }
+  </style>
+</head>
+
+<body>
+  <div class="wrap" id="app">
+    <header>
+      <div class="brand">
+        <div class="logo" aria-hidden="true"></div>
+        <div>
+          <h1>QR Link</h1>
+          <p class="sub">Generator kodów QR tylko dla linków. Prosto i bez bajerów.</p>
+        </div>
+      </div>
+      <div class="top-actions">
+        <span class="credit">Stworzył Mateusz Śmidoda — użytek niekomercyjny</span>
+        <button class="btn ghost" id="themeBtn" title="Przełącz motyw">🌗 Motyw</button>
+      </div>
+    </header>
+
+    <!-- LEFT: builder -->
+    <section class="card">
+      <div class="card-h">
+        <div style="font-weight:700;">Dane</div>
+        <button class="btn danger" id="clearBtn" title="Wyczyść">Wyczyść</button>
+      </div>
+      <div class="card-b">
+        <div>
+          <label for="linkInput">Link</label>
+          <textarea id="linkInput" placeholder="Wklej link (np. https://...)"></textarea>
+        </div>
+
+        <div style="margin-top:12px;">
+          <label for="titleInput">Tytuł</label>
+          <input id="titleInput" type="text" placeholder="Opcjonalnie — tytuł do historii i nazwy pliku" />
+        </div>
+
+        <div class="row">
+          <div style="display:flex; gap:10px; flex-wrap:wrap;">
+            <button class="btn primary" id="genBtn">Wygeneruj</button>
+            <button class="btn" id="copyBtn">Kopiuj link</button>
+            <button class="btn" id="shareBtn">Udostępnij</button>
+          </div>
+
+          <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+            <span class="pill">Rozmiar</span>
+            <select id="sizeSel" style="width:auto; min-width:120px;">
+              <option value="220">220 px</option>
+              <option value="260" selected>260 px</option>
+              <option value="320">320 px</option>
+              <option value="420">420 px</option>
+            </select>
+            <button class="btn" id="downloadBtn">Pobierz Kod QR</button>
+          </div>
+        </div>
+
+        <p class="hint">
+          QR koduje sam tekst. Jak chcesz “udostępniać pliki”, to w praktyce i tak kończy się linkiem do pliku.
+        </p>
+
+        <div class="footer-note">
+          Stworzył Mateusz Śmidoda — Na użytek niekomercyjny
+        </div>
+      </div>
+    </section>
+
+    <!-- RIGHT: preview + history -->
+    <aside class="preview">
+      <section class="card">
+        <div class="card-h">
+          <div>
+            <div style="font-weight:700;">Podgląd</div>
+            <div class="sub">Zawartość zakodowana w QR:</div>
+          </div>
+          <span class="pill mono" id="lenPill">0 znaków</span>
+        </div>
+        <div class="card-b">
+          <div class="qrbox">
+            <div id="qrcode"></div>
+          </div>
+          <div class="qrmeta mono" id="payloadOut" style="margin-top:10px;"></div>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="card-h">
+          <div>
+            <div style="font-weight:700;">Historia</div>
+            <div class="sub">Kliknij wpis, żeby wrócić do linku</div>
+          </div>
+          <button class="btn ghost" id="wipeHistoryBtn" title="Wyczyść historię">🧽</button>
+        </div>
+        <div class="card-b">
+          <div class="history" id="history"></div>
+        </div>
+      </section>
+    </aside>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+<script>
+(() => {
+  const $ = (sel) => document.querySelector(sel);
+  const elQR = $("#qrcode");
+  const elPayloadOut = $("#payloadOut");
+  const elLenPill = $("#lenPill");
+  const elSizeSel = $("#sizeSel");
+  const elHistory = $("#history");
+  const toast = $("#toast");
+
+  const STORAGE_KEY = "qrlink_history_v1";
+  const THEME_KEY = "qrlink_theme_v1";
+
+  let qr = null;
+  let lastPayload = "";
+
+  function showToast(msg){
+    toast.textContent = msg;
+    toast.classList.add("show");
+    clearTimeout(showToast._t);
+    showToast._t = setTimeout(() => toast.classList.remove("show"), 1600);
+  }
+
+  function setTheme(theme){
+    document.documentElement.setAttribute("data-theme", theme);
+    localStorage.setItem(THEME_KEY, theme);
+  }
+
+  function toggleTheme(){
+    const cur = document.documentElement.getAttribute("data-theme") || "dark";
+    setTheme(cur === "dark" ? "light" : "dark");
+  }
+
+  function initTheme(){
+    const saved = localStorage.getItem(THEME_KEY);
+    setTheme(saved || "dark");
+  }
+
+  function v(id){ return (document.getElementById(id)?.value ?? "").trim(); }
+
+  function normalizeLink(raw){
+    const s = (raw || "").trim();
+    if(!s) return "";
+    // If user pasted domain without scheme, try to fix it
+    if(/^https?:\/\//i.test(s)) return s;
+    if(/^[a-z0-9.-]+\.[a-z]{2,}(\/.*)?$/i.test(s)) return "https://" + s;
+    // If it's not a clear URL, leave as-is (user may know what they're doing)
+    return s;
+  }
+
+  function ensureQR(){
+    elQR.innerHTML = "";
+    qr = null;
+    const size = parseInt(elSizeSel.value, 10) || 260;
+    qr = new QRCode(elQR, {
+      width: size,
+      height: size,
+      correctLevel: QRCode.CorrectLevel.M
+    });
+  }
+
+  function setPayloadUI(payload){
+    lastPayload = payload || "";
+    elPayloadOut.textContent = lastPayload ? lastPayload : "(pusto — wklej link po lewej)";
+    elLenPill.textContent = `${lastPayload.length} znaków`;
+  }
+
+  function buildPayload(){
+    const raw = v("linkInput");
+    return normalizeLink(raw);
+  }
+
+  function guessTitle(payload){
+    const t = v("titleInput");
+    if(t) return t;
+    // fallback from hostname if it's a URL
+    try{
+      const u = new URL(payload);
+      return u.hostname || "Link";
+    }catch{
+      return "Link";
+    }
+  }
+
+  function loadHistory(){
+    try{ return JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]"); }
+    catch{ return []; }
+  }
+
+  function saveToHistory(payload){
+    const list = loadHistory();
+    if(list[0]?.payload === payload){
+      renderHistory();
+      return;
+    }
+    const item = {
+      payload,
+      title: guessTitle(payload),
+      ts: Date.now()
+    };
+    const next = [item, ...list].slice(0, 20);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+    renderHistory();
+  }
+
+  function renderHistory(){
+    const list = loadHistory();
+    elHistory.innerHTML = "";
+    if(!list.length){
+      const empty = document.createElement("div");
+      empty.className = "sub";
+      empty.textContent = "Pusto. Wygeneruj QR z linku, a będzie tu historia.";
+      elHistory.appendChild(empty);
+      return;
+    }
+
+    list.forEach(it => {
+      const d = document.createElement("div");
+      d.className = "hist-item";
+      d.onclick = () => {
+        $("#linkInput").value = it.payload;
+        $("#titleInput").value = it.title === "Link" ? "" : it.title; // delikatnie
+        generateFromPayload(it.payload);
+        showToast("Wczytane z historii");
+      };
+
+      const top = document.createElement("div");
+      top.className = "hist-top";
+
+      const left = document.createElement("div");
+      left.innerHTML = `<div class="hist-title">${escapeHtml(it.title)}</div>`;
+
+      const right = document.createElement("div");
+      right.className = "hist-time";
+      right.textContent = new Date(it.ts).toLocaleString();
+
+      top.appendChild(left);
+      top.appendChild(right);
+
+      const val = document.createElement("div");
+      val.className = "hist-val mono";
+      val.textContent = it.payload;
+
+      d.appendChild(top);
+      d.appendChild(val);
+      elHistory.appendChild(d);
+    });
+  }
+
+  function escapeHtml(s){
+    return (s||"").replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+
+  function generate(){
+    const payload = buildPayload();
+    setPayloadUI(payload);
+
+    ensureQR();
+    if(payload){
+      qr.makeCode(payload);
+      saveToHistory(payload);
+    }
+  }
+
+  function generateFromPayload(payload){
+    const p = normalizeLink(payload);
+    setPayloadUI(p);
+    ensureQR();
+    if(p) qr.makeCode(p);
+  }
+
+  async function copyPayload(){
+    if(!lastPayload) return showToast("Nie ma czego kopiować");
+    try{
+      await navigator.clipboard.writeText(lastPayload);
+      showToast("Skopiowane");
+    }catch{
+      showToast("Nie udało się skopiować");
+    }
+  }
+
+  async function sharePayload(){
+    if(!lastPayload) return showToast("Nie ma czego udostępniać");
+    if(navigator.share){
+      try{
+        await navigator.share({ text: lastPayload, title: "QR Link" });
+        showToast("Udostępnione");
+      }catch{
+        // user cancel etc.
+      }
+    }else{
+      showToast("Brak opcji udostępniania w tej przeglądarce");
+    }
+  }
+
+  function downloadPNG(){
+    const img = elQR.querySelector("img");
+    const canvas = elQR.querySelector("canvas");
+    const title = (v("titleInput") || "qr_link").replace(/[^\w\-]+/g, "_").slice(0,40);
+
+    if(img && img.src){
+      const a = document.createElement("a");
+      a.href = img.src;
+      a.download = `${title}.png`;
+      a.click();
+      return;
+    }
+    if(canvas){
+      const a = document.createElement("a");
+      a.href = canvas.toDataURL("image/png");
+      a.download = `${title}.png`;
+      a.click();
+      return;
+    }
+    showToast("Najpierw wygeneruj kod");
+  }
+
+  function clearForm(){
+    $("#linkInput").value = "";
+    $("#titleInput").value = "";
+    generate();
+  }
+
+  function wipeHistory(){
+    localStorage.removeItem(STORAGE_KEY);
+    renderHistory();
+    showToast("Historia wyczyszczona");
+  }
+
+  // events
+  $("#genBtn").onclick = () => generate();
+  $("#copyBtn").onclick = () => copyPayload();
+  $("#shareBtn").onclick = () => sharePayload();
+  $("#downloadBtn").onclick = () => downloadPNG();
+  $("#clearBtn").onclick = () => clearForm();
+  $("#wipeHistoryBtn").onclick = () => wipeHistory();
+  $("#themeBtn").onclick = () => toggleTheme();
+  elSizeSel.onchange = () => generate();
+  $("#linkInput").addEventListener("input", () => generate());
+  $("#titleInput").addEventListener("input", () => {
+    // nie generuje nowego QR (bo tytuł nie wpływa na payload), ale zmienia nazwę pliku/historię
+  });
+
+  // init
+  initTheme();
+  renderHistory();
+  generate();
+
+})();
+</script>
+</body>
+</html>
